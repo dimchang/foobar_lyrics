@@ -11,15 +11,22 @@ endif()
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Release)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Release)
 
-# Include directories
+# SDK can be in sdk/ or ../foobar2000-sdk
+set(SDK_DIR "")
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sdk)
+    set(SDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sdk)
+elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../foobar2000-sdk)
+    set(SDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../foobar2000-sdk)
+else()
+    message(FATAL_ERROR "SDK not found!")
+endif()
+
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/foobar2000/SDK
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/foobar2000/shared
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/pfc
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/ATLHelpers
+    ${SDK_DIR}/foobar2000/SDK
+    ${SDK_DIR}/foobar2000/shared
+    ${SDK_DIR}/pfc
 )
 
-# Source files - MATCHING ACTUAL FILES
 set(SOURCES
     src/main.cpp
     src/lyrics_panel.cpp
@@ -38,14 +45,12 @@ set(HEADERS
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
 
-# Link libraries
 target_link_libraries(${PROJECT_NAME}
     winhttp
     gdiplus
     comctl32
 )
 
-# MinGW-compatible flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
