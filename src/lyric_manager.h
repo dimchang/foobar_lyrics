@@ -1,25 +1,30 @@
 #pragma once
 #include "lyric_source.h"
 #include "lrc_parser.h"
+#include "sources.h"
 #include <vector>
 #include <string>
 
 class LyricManager {
 public:
-    static LyricManager& get() { static LyricManager m; return m; }
-    void addSource(LyricSource* s) { srcs_.push_back(s); }
+    static LyricManager& get() { 
+        static LyricManager m; 
+        return m; 
+    }
+    
     std::vector<LyricLine> search(const std::string& s, const std::string& a) {
-        for (auto* x : srcs_) {
-            auto r = x->search(s, a);
-            if (!r.empty()) return r;
-        }
-        return {};
+        // Local source first
+        LocalSource local;
+        auto r = local.search(s, a);
+        if (!r.empty()) return r;
+        
+        // Then online sources
+        NeteaseSource netease;
+        r = netease.search(s, a);
+        if (!r.empty()) return r;
+        
+        QQMusicSource qq;
+        r = qq.search(s, a);
+        return r;
     }
-private:
-    LyricManager() {
-        srcs_.push_back(new LocalSource());
-        srcs_.push_back(new NeteaseSource());
-        srcs_.push_back(new QQMusicSource());
-    }
-    std::vector<LyricSource*> srcs_;
 };

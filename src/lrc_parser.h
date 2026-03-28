@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include "lyric_source.h"
+#include <regex>
+#include <sstream>
+#include <algorithm>
 #include <numeric>
 
 class LRCParser {

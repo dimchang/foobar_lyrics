@@ -1,6 +1,5 @@
 #include "lyric_search_task.h"
 #include "lyric_manager.h"
-#include <atomic>
 
 static std::atomic<LyricSearchTask*> g_current_task{nullptr};
 
@@ -31,5 +30,4 @@ void LyricSearchTask::do_search() {
     is_running_ = false;
     
     if (hwnd_) ::PostMessage(hwnd_, WM_LYRIC_SEARCH_COMPLETE, reinterpret_cast<WPARAM>(this), 0);
-    // Task deleted in OnSearchComplete only
 }
