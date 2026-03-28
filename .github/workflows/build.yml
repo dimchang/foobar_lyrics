@@ -11,39 +11,29 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        path: foo_lyric_source
-        
-    - name: Download foobar2000 SDK
+    - name: Checkout source code
       run: |
-        cd foo_lyric_source
+        git clone --depth 1 https://github.com/dimchang/foobar_lyrics.git source
+        cd source
         git clone --depth 1 https://github.com/reupen/foobar2000-sdk-unmodified sdk
-        
-    - name: Setup MinGW
+
+    - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
-        update: true
-        install: |
-          mingw64/mingw-w64-x86_64-gcc
-          mingw64/mingw-w64-x86_64-make
-          mingw64/mingw-w64-x86_64-cmake
 
-    - name: Build
-      working-directory: ${{ github.workspace }}/foo_lyric_source
-      shell: msys {0}
+    - name: Configure and Build
       run: |
-        mkdir -p build
+        cd source
+        mkdir build
         cd build
-        cmake .. -G "MinGW Makefiles" -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release
-        mingw32-make -j$(nproc)
+        cmake .. -G "MinGW Makefiles"
+        mingw32-make -j4
 
     - name: Find DLL
       id: find_dll
       run: |
-        $dll = Get-ChildItem -Recurse -Filter "*.dll" -Path "${{ github.workspace }}/foo_lyric_source/build" | Select-Object -First 1
+        $dll = Get-ChildItem -Recurse -Filter "*.dll" -Path "source/build" | Select-Object -First 1
         if ($dll) {
           echo "dll_found=true" >> $env:GITHUB_OUTPUT
           echo "dll_path=$($dll.FullName)" >> $env:GITHUB_OUTPUT
@@ -52,7 +42,7 @@ jobs:
         }
       shell: pwsh
 
-    - name: Upload DLL artifact
+    - name: Upload DLL
       if: steps.find_dll.outputs.dll_found == 'true'
       uses: actions/upload-artifact@v4
       with:
