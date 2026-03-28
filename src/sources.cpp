@@ -1,11 +1,10 @@
 #include "sources.h"
 #include "lrc_parser.h"
-#include <winhttp.h>
-#include <regex>
-#include <pfc.h>
+#include <windows.h>
 
 #pragma comment(lib, "winhttp.lib")
 
+// Simple HTTP GET without pfc dependency
 static std::string httpGet(const std::string& url) {
     HINTERNET hs = WinHttpOpen(L"lyric/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!hs) return "";
@@ -15,8 +14,13 @@ static std::string httpGet(const std::string& url) {
     uc.lpszScheme = scheme; uc.dwSchemeLength = 256;
     uc.lpszHostName = host; uc.dwHostNameLength = 256;
     uc.lpszUrlPath = path; uc.dwUrlPathLength = 1024;
-    pfc::stringcvt::string_wide_from_utf8 wurl(url.c_str());
-    if (!WinHttpCrackUrl(wurl.get_ptr(), 0, 0, &uc)) { WinHttpCloseHandle(hs); return ""; }
+    
+    // Use MultiByteToWideChar for basic conversion
+    int len = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, NULL, 0);
+    std::wstring wurl(len, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, &wurl[0], len);
+    
+    if (!WinHttpCrackUrl(wurl.c_str(), 0, 0, &uc)) { WinHttpCloseHandle(hs); return ""; }
     
     HINTERNET hc = WinHttpConnect(hs, host, uc.nPort, 0);
     if (!hc) { WinHttpCloseHandle(hs); return ""; }
@@ -41,8 +45,12 @@ static std::string httpPost(const std::string& url, const std::string& data) {
     uc.lpszScheme = scheme; uc.dwSchemeLength = 256;
     uc.lpszHostName = host; uc.dwHostNameLength = 256;
     uc.lpszUrlPath = path; uc.dwUrlPathLength = 1024;
-    pfc::stringcvt::string_wide_from_utf8 wurl(url.c_str());
-    if (!WinHttpCrackUrl(wurl.get_ptr(), 0, 0, &uc)) { WinHttpCloseHandle(hs); return ""; }
+    
+    int len = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, NULL, 0);
+    std::wstring wurl(len, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, &wurl[0], len);
+    
+    if (!WinHttpCrackUrl(wurl.c_str(), 0, 0, &uc)) { WinHttpCloseHandle(hs); return ""; }
     
     HINTERNET hc = WinHttpConnect(hs, host, uc.nPort, 0);
     if (!hc) { WinHttpCloseHandle(hs); return ""; }
@@ -102,6 +110,5 @@ std::vector<LyricLine> QQMusicSource::search(const std::string& song, const std:
 }
 
 std::vector<LyricLine> LocalSource::search(const std::string& song, const std::string& artist) {
-    // Simplified: Looks in ./lyrics folder - not fully implemented for brevity
     return {};
 }
