@@ -1,0 +1,28 @@
+# Build output
+build/
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.exp
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# SDK (large, don't commit)
+sdk/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake

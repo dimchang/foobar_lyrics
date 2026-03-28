@@ -1,0 +1,64 @@
+name: Build foobar2000 Lyrics Plugin
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: |
+          mingw64/mingw-w64-x86_64-gcc
+          mingw64/mingw-w64-x86_64-make
+          mingw64/mingw-w64-x86_64-cmake
+
+    - name: Configure CMake
+      working-directory: ${{ github.workspace }}/foo_lyric_source
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -G "MinGW Makefiles" -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      working-directory: ${{ github.workspace }}/foo_lyric_source/build
+      run: mingw32-make -j$(nproc)
+
+    - name: Find DLL
+      id: find_dll
+      working-directory: ${{ github.workspace }}/foo_lyric_source/build
+      run: |
+        $dll = Get-ChildItem -Recurse -Filter "*.dll" | Select-Object -First 1
+        if ($dll) {
+          echo "dll_found=true" >> $env:GITHUB_OUTPUT
+          echo "dll_path=$($dll.FullName)" >> $env:GITHUB_OUTPUT
+        } else {
+          echo "dll_found=false" >> $env.GITHUB_OUTPUT
+        }
+      shell: pwsh
+
+    - name: Upload DLL artifact
+      if: steps.find_dll.outputs.dll_found == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: foo_lyric_source.dll
+        path: ${{ steps.find_dll.outputs.dll_path }}
+        retention-days: 30
+
+    - name: Upload build logs if failed
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: ${{ github.workspace }}/foo_lyric_source/build/*.log
